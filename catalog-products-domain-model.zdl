@@ -4,7 +4,7 @@ config {
     title "Arcadia Editions - Product Catalog"
     moduleBasePackage "com.arcadiaeditions.catalog.products"
     persistence jpa
-    layout LayeredProjectLayout
+    layout SimpleDomainProjectLayout
 
     plugins {
         /** Generates an OpenAPI 3.0 specification from this ZDL model. */
@@ -60,7 +60,7 @@ input UpdateProductInput {
     launchAt Instant
 }
 
-output ProductPublished {
+output ProductPublishedResponse {
     productId String
     sku String
     publishedAt Instant

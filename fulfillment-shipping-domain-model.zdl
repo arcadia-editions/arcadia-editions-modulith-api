@@ -4,7 +4,7 @@ config {
     title "Arcadia Editions - Fulfillment Shipping"
     moduleBasePackage "com.arcadiaeditions.fulfillment.shipping"
     persistence jpa
-    layout LayeredProjectLayout
+    layout SimpleDomainProjectLayout
 
     plugins {
 //        /** Generates an OpenAPI 3.0 specification from this ZDL model. */
@@ -27,6 +27,19 @@ entity Fulfillment {
     orderId String required unique
     customerId String required
     status FulfillmentStatus required
+    @json shippingAddress ShippingAddress required {
+        name String required
+        line1 String required
+        line2 String
+        city String required
+        region String
+        postalCode String required
+        country String required
+    }
+    @json items FulfillmentItem[] required minlength(1) {
+        sku String required
+        quantity Integer required
+    }
     carrierCode String
     trackingNumber String
     scheduledAt Instant

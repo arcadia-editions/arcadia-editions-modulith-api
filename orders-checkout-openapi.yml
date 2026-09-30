@@ -28,7 +28,6 @@ paths:
     post:
       operationId: startOrderCheckout
       description: "startOrderCheckout"
-      summary: "startOrderCheckout"
       tags: [OrdersCheckout]
       requestBody:
         required: true
@@ -49,19 +48,44 @@ components:
     StartOrderCheckoutInput:
       type: "object"
       x-business-entity: "StartOrderCheckoutInput"
+      required:
+      - "customerId"
+      - "customerEmail"
+      - "paymentMethodId"
+      - "currency"
+      - "items"
+      - "shippingAddress"
       properties:
+        customerId:
+          type: "string"
+        customerEmail:
+          type: "string"
+          maxLength: 254
+        paymentMethodId:
+          type: "string"
+        currency:
+          type: "string"
+          maxLength: 3
         items:
           type: "array"
           items:
-            type: "string"
+            $ref: "#/components/schemas/OrderItemInput"
             minLength: 1
+        shippingAddress:
+          $ref: "#/components/schemas/ShippingAddressInput"
     Order:
       type: "object"
       x-business-entity: "Order"
       required:
       - "orderId"
       - "status"
+      - "customerId"
+      - "customerEmail"
+      - "paymentMethodId"
       - "items"
+      - "shippingAddress"
+      - "totalAmount"
+      - "currency"
       properties:
         id:
           type: "integer"
@@ -76,10 +100,28 @@ components:
           type: "string"
         status:
           $ref: "#/components/schemas/OrderStatus"
+        customerId:
+          type: "string"
+          description: "Customer snapshot taken at checkout (there is no customers\
+            \ bounded context yet)."
+        customerEmail:
+          type: "string"
+          maxLength: 254
+        paymentMethodId:
+          type: "string"
         items:
           type: "array"
           items:
-            type: "string"
+            $ref: "#/components/schemas/OrderItem"
+            minLength: 1
+        shippingAddress:
+          $ref: "#/components/schemas/ShippingAddress"
+        totalAmount:
+          type: "number"
+          format: "double"
+        currency:
+          type: "string"
+          maxLength: 3
         createdAt:
           type: "string"
           format: "date-time"
@@ -89,6 +131,8 @@ components:
         cancelledAt:
           type: "string"
           format: "date-time"
+        cancellationReason:
+          type: "string"
     OrderStatus:
       type: "string"
       x-business-entity: "OrderStatus"
@@ -96,7 +140,137 @@ components:
       - "CREATED"
       - "CONFIRMED"
       - "CANCELLED"
+    OrderItem:
+      type: "object"
+      x-business-entity: "OrderItem"
+      required:
+      - "sku"
+      - "quantity"
+      - "unitPrice"
+      properties:
+        sku:
+          type: "string"
+        quantity:
+          type: "integer"
+          format: "int32"
+        unitPrice:
+          type: "number"
+          format: "double"
+    ShippingAddress:
+      type: "object"
+      x-business-entity: "ShippingAddress"
+      required:
+      - "name"
+      - "line1"
+      - "city"
+      - "postalCode"
+      - "country"
+      properties:
+        name:
+          type: "string"
+        line1:
+          type: "string"
+        line2:
+          type: "string"
+        city:
+          type: "string"
+        region:
+          type: "string"
+        postalCode:
+          type: "string"
+        country:
+          type: "string"
+    ShippingAddressInput:
+      type: "object"
+      x-business-entity: "ShippingAddressInput"
+      required:
+      - "name"
+      - "line1"
+      - "city"
+      - "postalCode"
+      - "country"
+      properties:
+        name:
+          type: "string"
+        line1:
+          type: "string"
+        line2:
+          type: "string"
+        city:
+          type: "string"
+        region:
+          type: "string"
+        postalCode:
+          type: "string"
+        country:
+          type: "string"
+    OrderItemInput:
+      type: "object"
+      x-business-entity: "OrderItemInput"
+      required:
+      - "sku"
+      - "quantity"
+      - "unitPrice"
+      properties:
+        sku:
+          type: "string"
+        quantity:
+          type: "integer"
+          format: "int32"
+        unitPrice:
+          type: "number"
+          format: "double"
 
+    Page:
+      type: object
+      required:
+        - "content"
+        - "totalElements"
+        - "totalPages"
+        - "size"
+        - "number"
+      properties:
+        number:
+          type: integer
+          minimum: 0
+        numberOfElements:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 0
+          maximum: 200
+          multipleOf: 25
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+
+  parameters:
+    page:
+      name: page
+      in: query
+      description: The number of results page
+      schema:
+        type: integer
+        format: int32
+        default: 0
+    limit:
+      name: limit
+      in: query
+      description: The number of results in a single page
+      schema:
+        type: integer
+        format: int32
+        default: 20
+    sort:
+      name: sort
+      in: query
+      description: Sort results by field name and direction (asc or desc)
+      schema:
+        type: array
+        items:
+          type: string
 
   securitySchemes:
     basicAuth:     # <-- arbitrary name for the security scheme

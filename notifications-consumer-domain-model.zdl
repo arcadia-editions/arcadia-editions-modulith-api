@@ -27,7 +27,7 @@ entity Notification {
     notificationId String required unique
     customerId String required
     orderId String
-    sku String
+    skus String[]
     type NotificationType required
     channel NotificationChannel required
     status NotificationStatus required
@@ -61,20 +61,25 @@ enum NotificationStatus {
 input SendOrderConfirmationInput {
     orderId String required
     customerId String required
-    email String required
+    customerEmail String required
 }
 
 input SendStockUnavailableNotificationInput {
+    orderId String required
     customerId String required
-    sku String required
-    email String required
+    customerEmail String required
+    unavailableItems StockUnavailableItemInput[] required minlength(1) {
+        sku String required
+        requestedQuantity Integer
+        availableQuantity Integer
+    }
 }
 
 input SendOrderCancelledNotificationInput {
     orderId String required
     customerId String required
     reason String required
-    email String required
+    customerEmail String required
 }
 
 //@rest("/notifications")
@@ -106,8 +111,9 @@ event OrderConfirmationSent {
 // @asyncapi({ channel: "stock-unavailable-notification-sent-event-v1", topic: "notifications-consumer.stock-unavailable-notification-sent.event.avro.v1" })
 event StockUnavailableNotificationSent {
     notificationId String
+    orderId String
     customerId String
-    sku String
+    skus String[]
     channel NotificationChannel
     recipient String
     sentAt Instant
@@ -129,7 +135,7 @@ event NotificationDeliveryFailed {
     notificationId String
     orderId String
     customerId String
-    sku String
+    skus String[]
     type NotificationType
     channel NotificationChannel
     recipient String
