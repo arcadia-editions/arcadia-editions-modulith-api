@@ -64,7 +64,7 @@ input ReserveStockInput {
 
 /** Releases every reservation of the order. */
 input ReleaseStockInput {
-    // orderId String required
+    orderId String required
     reason StockReleaseReason required
 }
 
@@ -115,7 +115,7 @@ service InventoryService for (StockReservation) {
     @listener(zdl: PaymentsProcessingZdl, event: PaymentVoided)
     @timer(api: SchedulerApi, channel: "reservation-expired-event-v1")
     @transition(from: [RESERVED, CONFIRMED], to: RELEASED)
-    releaseStock(id, ReleaseStockInput) StockReservation[] withEvents StockReleased
+    releaseStock(ReleaseStockInput) StockReservation[] withEvents StockReleased
 
 //    @post("/reservations/confirm")
     @transition(from: RESERVED, to: CONFIRMED)
