@@ -79,12 +79,12 @@ input StartOrderCheckoutInput {
     }
 }
 
-// input ConfirmOrderInput {
-//     orderId String required
-// }
+input ConfirmOrderInput {
+    orderId String required
+}
 
 input CancelOrderInput {
-    // orderId String required
+    orderId String required
     /** From StockReleased.reason (StockReleaseReason name). */
     reason String required
 }
@@ -100,11 +100,11 @@ service OrdersCheckoutService for (Order) {
     @listener(zdl: PaymentsProcessingZdl, event: PaymentAuthorized)
     @transition(from: CREATED, to: CONFIRMED)
     @calls(zdl: CatalogInventoryZdl, command: InventoryService.confirmStockReservation)
-    confirmOrder(id) Order withEvents OrderConfirmed
+    confirmOrder(ConfirmOrderInput) Order withEvents OrderConfirmed
 
     @listener(zdl: CatalogInventoryZdl, event: StockReleased)
     @transition(from: [CREATED, CONFIRMED], to: CANCELLED)
-    cancelOrder(id, CancelOrderInput) Order withEvents OrderCancelled
+    cancelOrder(CancelOrderInput) Order withEvents OrderCancelled
 
     @get("/{id}")
     getOrder(id) Order?

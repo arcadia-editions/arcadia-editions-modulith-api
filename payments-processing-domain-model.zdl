@@ -74,7 +74,7 @@ input CapturePaymentInput {
 
 /** The payment is resolved by orderId (Payment.orderId is unique); fulfillment events carry no paymentId. */
 input VoidPaymentInput {
-    // orderId String required
+    orderId String required
     reason String required
 }
 
@@ -88,16 +88,16 @@ service PaymentsProcessingService for (Payment) {
 
     @listener(event: PaymentFailed)
     @transition(from: FAILED, to: AUTHORIZATION_REQUESTED)
-    retryPayment(id, RetryPaymentInput) Payment withEvents [PaymentRetried | PaymentRetryExhausted]
+    retryPayment(RetryPaymentInput) Payment withEvents [PaymentRetried | PaymentRetryExhausted]
 
     @listener(zdl: FulfillmentShippingZdl, event: FulfillmentScheduled)
     @transition(from: AUTHORIZED, to: CAPTURED)
-    capturePayment(id, CapturePaymentInput) Payment withEvents [PaymentCaptured | PaymentCaptureFailed]
+    capturePayment(CapturePaymentInput) Payment withEvents [PaymentCaptured | PaymentCaptureFailed]
 
     @listener(zdl: FulfillmentShippingZdl, event: FulfillmentFailed)
     @listener(event: PaymentCaptureFailed)
     @transition(from: [AUTHORIZED, AUTHORIZATION_REQUESTED, FAILED, CAPTURE_FAILED], to: VOIDED)
-    voidPayment(id, VoidPaymentInput) Payment withEvents PaymentVoided
+    voidPayment(VoidPaymentInput) Payment withEvents PaymentVoided
 }
 
 // @asyncapi({ channel: "payment-authorized-event-v1", topic: "payments-processing.payment-authorized.event.avro.v1" })
