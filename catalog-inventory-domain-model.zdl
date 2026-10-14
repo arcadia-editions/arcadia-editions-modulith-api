@@ -57,10 +57,10 @@ input ReserveStockInput {
     }
 }
 
-// /** Confirms every reservation of the order. */
-// input ConfirmStockReservationInput {
-//     orderId String required
-// }
+/** Confirms every reservation of the order. */
+input ConfirmStockReservationInput {
+    orderId String required
+}
 
 /** Releases every reservation of the order. */
 input ReleaseStockInput {
@@ -119,7 +119,7 @@ service InventoryService for (StockReservation) {
 
 //    @post("/reservations/confirm")
     @transition(from: RESERVED, to: CONFIRMED)
-    confirmStockReservation(id) StockReservation[] withEvents StockReservationConfirmed
+    confirmStockReservation(ConfirmStockReservationInput) StockReservation[] withEvents StockReservationConfirmed
 }
 
 // @asyncapi({ channel: "stock-released-event-v1", topic: "catalog-inventory.stock-released.event.avro.v1" })
