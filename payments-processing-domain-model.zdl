@@ -49,6 +49,7 @@ enum PaymentStatus {
     FAILED
     RETRY_EXHAUSTED
     CAPTURED
+    CAPTURE_FAILED
     VOIDED
 }
 
@@ -95,7 +96,7 @@ service PaymentsProcessingService for (Payment) {
 
     @listener(zdl: FulfillmentShippingZdl, event: FulfillmentFailed)
     @listener(event: PaymentCaptureFailed)
-    @transition(from: [AUTHORIZED, AUTHORIZATION_REQUESTED, FAILED], to: VOIDED)
+    @transition(from: [AUTHORIZED, AUTHORIZATION_REQUESTED, FAILED, CAPTURE_FAILED], to: VOIDED)
     voidPayment(id, VoidPaymentInput) Payment withEvents PaymentVoided
 }
 

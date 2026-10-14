@@ -42,6 +42,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
+  /orders/{id}:
+    get:
+      operationId: getOrder
+      description: "getOrder"
+      tags: [OrdersCheckout]
+      parameters:
+        - name: "id"
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
 
 components:
   schemas:

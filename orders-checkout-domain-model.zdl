@@ -33,7 +33,7 @@ entity Order(checkout_order) {
     @json items OrderItem[] required minlength(1) {
         sku String required
         quantity Integer required min(1)
-        unitPrice BigDecimal required
+        unitPrice BigDecimal required // this should come from catalog.products
     }
     @json shippingAddress ShippingAddress required {
         name String required
@@ -66,7 +66,7 @@ input StartOrderCheckoutInput {
     items OrderItemInput[] required minlength(1) {
         sku String required
         quantity Integer required min(1)
-        unitPrice BigDecimal required
+        unitPrice BigDecimal required // this should come from catalog.products
     }
     shippingAddress ShippingAddressInput required {
         name String required
@@ -105,6 +105,9 @@ service OrdersCheckoutService for (Order) {
     @listener(zdl: CatalogInventoryZdl, event: StockReleased)
     @transition(from: [CREATED, CONFIRMED], to: CANCELLED)
     cancelOrder(id, CancelOrderInput) Order withEvents OrderCancelled
+
+    @get("/{id}")
+    getOrder(id) Order?
 }
 
 // @asyncapi({ channel: "order-created-event-v1", topic: "orders-checkout.order-created.event.avro.v1" })
