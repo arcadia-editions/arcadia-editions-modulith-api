@@ -87,7 +87,7 @@ service PaymentsProcessingService for (Payment) {
     authorizePayment(AuthorizePaymentInput) Payment withEvents [PaymentAuthorized | PaymentDeclined | PaymentFailed]
 
     @listener(event: PaymentFailed)
-    @transition(from: FAILED, to: AUTHORIZATION_REQUESTED)
+    @transition(from: FAILED, to: [FAILED, RETRY_EXHAUSTED])
     retryPayment(RetryPaymentInput) Payment withEvents [PaymentRetried | PaymentRetryExhausted]
 
     @listener(zdl: FulfillmentShippingZdl, event: FulfillmentScheduled)
