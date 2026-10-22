@@ -1,7 +1,7 @@
 openapi: 3.0.1
 info:
   title: "Arcadia Editions - Orders Checkout"
-  version: 0.0.1
+  version: "0.0.0"
   description: "Arcadia Editions - Orders Checkout"
   contact:
     email: email@domain.com
