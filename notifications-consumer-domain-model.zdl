@@ -1,6 +1,6 @@
 config {
     id "urn:com.arcadiaeditions:notifications:consumer"
-    version "0.1.0"
+    version "0.0.0"
     title "Arcadia Editions - Notifications Consumer"
     moduleBasePackage "com.arcadiaeditions.notifications.consumer"
     persistence jpa

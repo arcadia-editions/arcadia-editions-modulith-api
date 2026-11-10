@@ -1,6 +1,6 @@
 config {
     id "urn:com.arcadiaeditions:orders:checkout"
-    version "0.1.0"
+    version "0.0.0"
     title "Arcadia Editions - Orders Checkout"
     moduleBasePackage "com.arcadiaeditions.orders.checkout"
     persistence jpa
