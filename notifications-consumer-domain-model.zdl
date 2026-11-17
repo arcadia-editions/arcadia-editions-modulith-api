@@ -86,15 +86,15 @@ input SendOrderCancelledNotificationInput {
 service NotificationsConsumerService for (Notification) {
 
     @listener(zdl: PaymentsProcessingZdl, event: PaymentCaptured)
-    @transition(to: PENDING)
+    @transition(to: [SENT, FAILED])
     sendOrderConfirmation(SendOrderConfirmationInput) Notification withEvents [OrderConfirmationSent | NotificationDeliveryFailed]
 
     @listener(zdl: OrdersCheckoutZdl, event: StockUnavailable)
-    @transition(to: PENDING)
+    @transition(to: [SENT, FAILED])
     sendStockUnavailableNotification(SendStockUnavailableNotificationInput) Notification withEvents [StockUnavailableNotificationSent | NotificationDeliveryFailed]
 
     @listener(zdl: OrdersCheckoutZdl, event: OrderCancelled)
-    @transition(to: PENDING)
+    @transition(to: [SENT, FAILED])
     sendOrderCancelledNotification(SendOrderCancelledNotificationInput) Notification withEvents [OrderCancelledNotificationSent | NotificationDeliveryFailed]
 }
 
@@ -130,6 +130,7 @@ event OrderCancelledNotificationSent {
     sentAt Instant
 }
 
+/** Ends place-order-flow as notificationFailed; `type` tells which business outcome the customer was not told. */
 // @asyncapi({ channel: "notification-delivery-failed-event-v1", topic: "notifications-consumer.notification-delivery-failed.event.avro.v1" })
 event NotificationDeliveryFailed {
     notificationId String

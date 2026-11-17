@@ -32,7 +32,7 @@ paths:
   /orders/start-checkout:
     post:
       operationId: startOrderCheckout
-      description: "startOrderCheckout"
+      description: "Persists the Order only when the stock is reserved. When stock is unavailable it answers 409 and persists nothing (P-03 A)."
       summary: "startOrderCheckout"
       tags: [OrdersCheckout]
       requestBody:
@@ -50,6 +50,12 @@ paths:
                 $ref: "#/components/schemas/Order"
         "400":
           description: "Invalid request"
+        "409":
+          description: "Stock unavailable; no Order persisted (P-03 A)"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockUnavailable"
   /orders/{id}:
     get:
       operationId: getOrder
@@ -247,9 +253,40 @@ components:
         quantity:
           type: "integer"
           format: "int32"
+          minimum: 1
         unitPrice:
           type: "number"
           format: "double"
+          minimum: 0
+          exclusiveMinimum: true
+    StockUnavailable:
+      type: "object"
+      x-business-entity: "StockUnavailable"
+      required:
+      - "orderId"
+      - "unavailableItems"
+      properties:
+        orderId:
+          type: "string"
+        unavailableItems:
+          type: "array"
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/StockUnavailableItem"
+    StockUnavailableItem:
+      type: "object"
+      x-business-entity: "StockUnavailableItem"
+      required:
+      - "sku"
+      properties:
+        sku:
+          type: "string"
+        requestedQuantity:
+          type: "integer"
+          format: "int32"
+        availableQuantity:
+          type: "integer"
+          format: "int32"
 
   securitySchemes:
     basicAuth:     # <-- arbitrary name for the security scheme
