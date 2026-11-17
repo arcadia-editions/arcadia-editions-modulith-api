@@ -82,16 +82,19 @@ input VoidPaymentInput {
 service PaymentsProcessingService for (Payment) {
 
     @listener(zdl: OrdersCheckoutZdl, event: OrderCreated)
-    @listener(event: PaymentRetried)
-    @transition(to: AUTHORIZATION_REQUESTED)
+    @transition(to: [AUTHORIZED, DECLINED, FAILED])
     authorizePayment(AuthorizePaymentInput) Payment withEvents [PaymentAuthorized | PaymentDeclined | PaymentFailed]
+
+    @listener(event: PaymentRetried)
+    @transition(from: FAILED, to: [AUTHORIZED, DECLINED, FAILED])
+    reauthorizePayment(RetryPaymentInput) Payment withEvents [PaymentAuthorized | PaymentDeclined | PaymentFailed]
 
     @listener(event: PaymentFailed)
     @transition(from: FAILED, to: [FAILED, RETRY_EXHAUSTED])
     retryPayment(RetryPaymentInput) Payment withEvents [PaymentRetried | PaymentRetryExhausted]
 
     @listener(zdl: FulfillmentShippingZdl, event: FulfillmentScheduled)
-    @transition(from: AUTHORIZED, to: CAPTURED)
+    @transition(from: AUTHORIZED, to: [CAPTURED, CAPTURE_FAILED])
     capturePayment(CapturePaymentInput) Payment withEvents [PaymentCaptured | PaymentCaptureFailed]
 
     @listener(zdl: FulfillmentShippingZdl, event: FulfillmentFailed)
