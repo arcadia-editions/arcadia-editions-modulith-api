@@ -11,6 +11,7 @@ config {
         ZDLToOpenAPIPlugin {
             idType integer
             idTypeFormat int64
+            openapiOverlayFiles "./orders-checkout-openapi-overlay.yml"
             targetFile "./orders-checkout-openapi.yml"
         }
     }
