@@ -150,15 +150,14 @@ service PaymentsProcessingService for (Payment) {
     capturePayment(CapturePaymentInput) Payment withEvents [PaymentCaptured | PaymentCaptureFailed]
 
     /**
-     * OrderCancelled is the safety net, OrderConfirmationRejected the late-authorization path.
-     * No-op, no event, when there is no Payment or it is AUTHORIZATION_REQUESTED, VOIDED,
-     * VOID_FAILED, DECLINED, RETRY_EXHAUSTED or CAPTURED. Voiding a FAILED payment is local (no hold).
+     * FulfillmentFailed and PaymentCaptureFailed void after a failure downstream;
+     * OrderConfirmationRejected voids an authorization that arrived after expiry or cancellation.
+     * No-op, no event, when there is no Payment or it is not AUTHORIZED or CAPTURE_FAILED (redelivery).
      */
-    @listener(zdl: OrdersCheckoutZdl, event: OrderCancelled)
     @listener(zdl: OrdersCheckoutZdl, event: OrderConfirmationRejected)
     @listener(zdl: FulfillmentShippingZdl, event: FulfillmentFailed)
     @listener(event: PaymentCaptureFailed)
-    @transition(from: [AUTHORIZED, FAILED, CAPTURE_FAILED], to: [VOIDED, VOID_FAILED])
+    @transition(from: [AUTHORIZED, CAPTURE_FAILED], to: [VOIDED, VOID_FAILED])
     voidPayment(VoidPaymentInput) Payment? withEvents [PaymentVoided | PaymentVoidFailed]
 
     /** Read only, for the reservation timer. STARTED for any existing Payment. */
