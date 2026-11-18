@@ -128,23 +128,24 @@ service PaymentsProcessingService for (Payment) {
     authorizePayment(AuthorizePaymentInput) Payment withEvents [PaymentAuthorized | PaymentDeclined | PaymentFailed]
 
     /**
-     * No-op unless FAILED and input.attemptCount == attemptCount. Saves AUTHORIZATION_REQUESTED with
+     * No-op, no event, when there is no Payment (P-12 A), or unless FAILED and input.attemptCount == attemptCount. Saves AUTHORIZATION_REQUESTED with
      * attemptCount + 1 and commits before calling the processor, as authorizePayment (P-11 A); then saves the outcome.
      * The processor call times out after 30 seconds and becomes PaymentFailed.
      */
     @listener(event: PaymentRetried)
     @transition(from: FAILED, to: AUTHORIZATION_REQUESTED)
     @transition(from: AUTHORIZATION_REQUESTED, to: [AUTHORIZED, DECLINED, FAILED])
-    reauthorizePayment(ReauthorizePaymentInput) Payment withEvents [PaymentAuthorized | PaymentDeclined | PaymentFailed]
+    reauthorizePayment(ReauthorizePaymentInput) Payment? withEvents [PaymentAuthorized | PaymentDeclined | PaymentFailed]
 
     /**
-     * No-op unless FAILED and input.attemptCount == attemptCount. Never increments attemptCount.
+     * No-op, no event, when there is no Payment (P-12 A), or unless FAILED and input.attemptCount == attemptCount.
+     * Never increments attemptCount.
      * At most 3 attempts in all (authorize + reauthorize); backoff before the next attempt: 5 seconds
      * before attempt 2, 15 seconds before attempt 3. RETRY_EXHAUSTED at the limit.
      */
     @listener(event: PaymentFailed)
     @transition(from: FAILED, to: [FAILED, RETRY_EXHAUSTED])
-    retryPayment(RetryPaymentInput) Payment withEvents [PaymentRetried | PaymentRetryExhausted]
+    retryPayment(RetryPaymentInput) Payment? withEvents [PaymentRetried | PaymentRetryExhausted]
 
     /** No-op, no event, when CAPTURED, CAPTURE_FAILED or VOIDED (redelivery). */
     @listener(zdl: FulfillmentShippingZdl, event: FulfillmentScheduled)
