@@ -54,10 +54,10 @@ entity Fulfillment {
 }
 
 enum FulfillmentStatus {
-    SCHEDULED
-    READY_TO_SHIP
-    FAILED
-    CANCELLED
+    SCHEDULED(1)
+    READY_TO_SHIP(2)
+    FAILED(3)
+    CANCELLED(4)
 }
 
 input ScheduleFulfillmentInput {

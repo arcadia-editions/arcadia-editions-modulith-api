@@ -41,21 +41,21 @@ entity Notification {
 }
 
 enum NotificationType {
-    ORDER_CONFIRMATION
-    STOCK_UNAVAILABLE
-    ORDER_CANCELLED
+    ORDER_CONFIRMATION(1)
+    STOCK_UNAVAILABLE(2)
+    ORDER_CANCELLED(3)
 }
 
 enum NotificationChannel {
-    EMAIL
-    SMS
-    PUSH
+    EMAIL(1)
+    SMS(2)
+    PUSH(3)
 }
 
 enum NotificationStatus {
-    PENDING
-    SENT
-    FAILED
+    PENDING(1)
+    SENT(2)
+    FAILED(3)
 }
 
 input SendOrderConfirmationInput {

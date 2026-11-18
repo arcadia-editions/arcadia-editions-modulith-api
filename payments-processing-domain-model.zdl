@@ -44,16 +44,16 @@ entity Payment {
 }
 
 enum PaymentStatus {
-    AUTHORIZATION_REQUESTED
-    AUTHORIZED
-    DECLINED
-    FAILED
-    RETRY_EXHAUSTED
-    CAPTURED
-    CAPTURE_FAILED
-    VOIDED
+    AUTHORIZATION_REQUESTED(1)
+    AUTHORIZED(2)
+    DECLINED(3)
+    FAILED(4)
+    RETRY_EXHAUSTED(5)
+    CAPTURED(6)
+    CAPTURE_FAILED(7)
+    VOIDED(8)
     /** The processor refused the void; ops release the hold by hand. Terminal. */
-    VOID_FAILED
+    VOID_FAILED(9)
 }
 
 input AuthorizePaymentInput {
@@ -82,8 +82,8 @@ input GetPaymentStatusInput {
 }
 
 enum GetPaymentStatusOutcome {
-    NO_PAYMENT
-    STARTED
+    NO_PAYMENT(1)
+    STARTED(2)
 }
 
 /** Exactly one of `noPayment` / `started` is set, according to `outcome`. */
@@ -128,11 +128,13 @@ service PaymentsProcessingService for (Payment) {
     authorizePayment(AuthorizePaymentInput) Payment withEvents [PaymentAuthorized | PaymentDeclined | PaymentFailed]
 
     /**
-     * No-op unless FAILED and input.attemptCount == attemptCount. Increments attemptCount and commits
-     * before calling the processor. The processor call times out after 30 seconds and becomes PaymentFailed.
+     * No-op unless FAILED and input.attemptCount == attemptCount. Saves AUTHORIZATION_REQUESTED with
+     * attemptCount + 1 and commits before calling the processor, as authorizePayment (P-11 A); then saves the outcome.
+     * The processor call times out after 30 seconds and becomes PaymentFailed.
      */
     @listener(event: PaymentRetried)
-    @transition(from: FAILED, to: [AUTHORIZED, DECLINED, FAILED])
+    @transition(from: FAILED, to: AUTHORIZATION_REQUESTED)
+    @transition(from: AUTHORIZATION_REQUESTED, to: [AUTHORIZED, DECLINED, FAILED])
     reauthorizePayment(ReauthorizePaymentInput) Payment withEvents [PaymentAuthorized | PaymentDeclined | PaymentFailed]
 
     /**

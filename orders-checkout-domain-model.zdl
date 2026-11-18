@@ -54,9 +54,9 @@ entity Order(checkout_order) {
 }
 
 enum OrderStatus {
-    CREATED
-    CONFIRMED
-    CANCELLED
+    CREATED(1)
+    CONFIRMED(2)
+    CANCELLED(3)
 }
 
 input StartOrderCheckoutInput {
