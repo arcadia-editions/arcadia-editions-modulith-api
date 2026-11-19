@@ -1,40 +1,43 @@
 openapi: 3.0.1
 info:
-  title: "Arcadia Editions - Orders Checkout"
-  version: "0.0.0"
-  description: "Arcadia Editions - Orders Checkout"
+  title: Arcadia Editions - Orders Checkout
+  version: 0.0.1
+  description: Arcadia Editions - Orders Checkout
   contact:
     email: email@domain.com
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
-servers:
-  - description: API
-    url: /api
-  - description: custom
-    url: "{protocol}://{server}/{path}"
-    variables:
-      protocol:
-        enum: ['http', 'https']
-        default: 'http'
-      server:
-        default: 'localhost:8080'
-      path:
-        default: 'api'
-tags:
-  - name: "Default"
-    description: "Operations that are not assigned to a service."
-  - name: "OrdersCheckout"
-    description: "Start checkout and read an order."
 
+servers:
+
+- description: localhost
+  url: http://localhost:8080/api
+
+- description: custom
+  url: "{protocol}://{server}/{path}"
+  variables:
+    protocol:
+      enum:
+      - http
+      - https
+      default: http
+    server:
+      default: localhost:8080
+    path:
+      default: api
+
+tags:
+
+- name: Default
+
+- name: OrdersCheckout
 
 paths:
   /orders/start-checkout:
     post:
       operationId: startOrderCheckout
-      description: "startOrderCheckout"
-      summary: "startOrderCheckout"
-      tags: [OrdersCheckout]
+      description: Persists the Order only on OrderCreated; StockUnavailable answers
+        409 and persists nothing (P-03 A).
+      tags:
+      - OrdersCheckout
       requestBody:
         required: true
         content:
@@ -43,222 +46,311 @@ paths:
               $ref: "#/components/schemas/StartOrderCheckoutInput"
       responses:
         "201":
-          description: "OK"
+          description: OK
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
         "400":
-          description: "Invalid request"
+          description: Invalid request
+        "409":
+          description: Stock unavailable; no Order persisted (P-03 A)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockUnavailable"
   /orders/{id}:
     get:
       operationId: getOrder
-      description: "getOrder"
-      summary: "getOrder"
-      tags: [OrdersCheckout]
+      description: getOrder
+      tags:
+      - OrdersCheckout
       parameters:
-        - name: "id"
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int64
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
       responses:
         "200":
-          description: "OK"
+          description: OK
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
         "400":
-          description: "Invalid request"
+          description: Invalid request
 
 components:
   schemas:
     StartOrderCheckoutInput:
-      type: "object"
-      x-business-entity: "StartOrderCheckoutInput"
+      type: object
+      x-business-entity: StartOrderCheckoutInput
       required:
-      - "customerId"
-      - "customerEmail"
-      - "paymentMethodId"
-      - "currency"
-      - "items"
-      - "shippingAddress"
+      - customerId
+      - customerEmail
+      - paymentMethodId
+      - currency
+      - items
+      - shippingAddress
       properties:
         customerId:
-          type: "string"
+          type: string
         customerEmail:
-          type: "string"
+          type: string
           maxLength: 254
         paymentMethodId:
-          type: "string"
+          type: string
         currency:
-          type: "string"
+          type: string
           maxLength: 3
         items:
-          type: "array"
-          minItems: 1 
+          type: array
           items:
             $ref: "#/components/schemas/OrderItemInput"
+          minItems: 1
         shippingAddress:
           $ref: "#/components/schemas/ShippingAddressInput"
     Order:
-      type: "object"
-      x-business-entity: "Order"
+      type: object
+      x-business-entity: Order
       required:
-      - "orderId"
-      - "status"
-      - "customerId"
-      - "customerEmail"
-      - "paymentMethodId"
-      - "items"
-      - "shippingAddress"
-      - "totalAmount"
-      - "currency"
+      - orderId
+      - status
+      - customerId
+      - customerEmail
+      - paymentMethodId
+      - items
+      - shippingAddress
+      - totalAmount
+      - currency
       properties:
         id:
-          type: "integer"
-          format: "int64"
+          type: integer
+          format: int64
           readOnly: true
         version:
-          type: "integer"
+          type: integer
           default: "null"
           description: "Version of the document (required in PUT for concurrency control,\
             \ should be null in POSTs)."
         orderId:
-          type: "string"
+          type: string
         status:
           $ref: "#/components/schemas/OrderStatus"
         customerId:
-          type: "string"
-          description: "Customer snapshot taken at checkout (there is no customers\
-            \ bounded context yet)."
+          type: string
+          description: Customer snapshot taken at checkout (there is no customers
+            bounded context yet).
         customerEmail:
-          type: "string"
+          type: string
           maxLength: 254
         paymentMethodId:
-          type: "string"
+          type: string
         items:
-          type: "array"
+          type: array
           items:
             $ref: "#/components/schemas/OrderItem"
           minItems: 1
         shippingAddress:
           $ref: "#/components/schemas/ShippingAddress"
         totalAmount:
-          type: "number"
-          format: "double"
+          type: number
+          format: double
         currency:
-          type: "string"
+          type: string
           maxLength: 3
         createdAt:
-          type: "string"
-          format: "date-time"
+          type: string
+          format: date-time
         confirmedAt:
-          type: "string"
-          format: "date-time"
+          type: string
+          format: date-time
         cancelledAt:
-          type: "string"
-          format: "date-time"
+          type: string
+          format: date-time
         cancellationReason:
-          type: "string"
+          type: string
     OrderStatus:
-      type: "string"
-      x-business-entity: "OrderStatus"
+      type: string
+      x-business-entity: OrderStatus
       enum:
-      - "CREATED"
-      - "CONFIRMED"
-      - "CANCELLED"
+      - CREATED
+      - CONFIRMED
+      - CANCELLED
     OrderItem:
-      type: "object"
-      x-business-entity: "OrderItem"
+      type: object
+      x-business-entity: OrderItem
       required:
-      - "sku"
-      - "quantity"
-      - "unitPrice"
+      - sku
+      - quantity
+      - unitPrice
       properties:
         sku:
-          type: "string"
+          type: string
         quantity:
-          type: "integer"
-          format: "int32"
+          type: integer
+          format: int32
+          minimum: 1
         unitPrice:
-          type: "number"
-          format: "double"
+          type: number
+          format: double
+          minimum: 0
     ShippingAddress:
-      type: "object"
-      x-business-entity: "ShippingAddress"
+      type: object
+      x-business-entity: ShippingAddress
       required:
-      - "name"
-      - "line1"
-      - "city"
-      - "postalCode"
-      - "country"
+      - name
+      - line1
+      - city
+      - postalCode
+      - country
       properties:
         name:
-          type: "string"
+          type: string
         line1:
-          type: "string"
+          type: string
         line2:
-          type: "string"
+          type: string
         city:
-          type: "string"
+          type: string
         region:
-          type: "string"
+          type: string
         postalCode:
-          type: "string"
+          type: string
         country:
-          type: "string"
+          type: string
     ShippingAddressInput:
-      type: "object"
-      x-business-entity: "ShippingAddressInput"
+      type: object
+      x-business-entity: ShippingAddressInput
       required:
-      - "name"
-      - "line1"
-      - "city"
-      - "postalCode"
-      - "country"
+      - name
+      - line1
+      - city
+      - postalCode
+      - country
       properties:
         name:
-          type: "string"
+          type: string
         line1:
-          type: "string"
+          type: string
         line2:
-          type: "string"
+          type: string
         city:
-          type: "string"
+          type: string
         region:
-          type: "string"
+          type: string
         postalCode:
-          type: "string"
+          type: string
         country:
-          type: "string"
+          type: string
     OrderItemInput:
-      type: "object"
-      x-business-entity: "OrderItemInput"
+      type: object
+      x-business-entity: OrderItemInput
       required:
-      - "sku"
-      - "quantity"
-      - "unitPrice"
+      - sku
+      - quantity
+      - unitPrice
       properties:
         sku:
-          type: "string"
+          type: string
         quantity:
-          type: "integer"
-          format: "int32"
+          type: integer
+          format: int32
+          minimum: 1
         unitPrice:
-          type: "number"
-          format: "double"
-
+          type: number
+          format: double
+          minimum: 0
+    Page:
+      type: object
+      required:
+      - content
+      - totalElements
+      - totalPages
+      - size
+      - number
+      properties:
+        number:
+          type: integer
+          minimum: 0
+        numberOfElements:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 0
+          maximum: 200
+          multipleOf: 25
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+    StockUnavailable:
+      type: object
+      x-business-entity: StockUnavailable
+      required:
+      - orderId
+      - unavailableItems
+      properties:
+        orderId:
+          type: string
+        unavailableItems:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/StockUnavailableItem"
+    StockUnavailableItem:
+      type: object
+      x-business-entity: StockUnavailableItem
+      required:
+      - sku
+      properties:
+        sku:
+          type: string
+        requestedQuantity:
+          type: integer
+          format: int32
+        availableQuantity:
+          type: integer
+          format: int32
+  parameters:
+    page:
+      name: page
+      in: query
+      description: The number of results page
+      schema:
+        type: integer
+        format: int32
+        default: 0
+    limit:
+      name: limit
+      in: query
+      description: The number of results in a single page
+      schema:
+        type: integer
+        format: int32
+        default: 20
+    sort:
+      name: sort
+      in: query
+      description: Sort results by field name and direction (asc or desc)
+      schema:
+        type: array
+        items:
+          type: string
   securitySchemes:
-    basicAuth:     # <-- arbitrary name for the security scheme
+    basicAuth:
       type: http
       scheme: basic
-    bearerAuth:     # <-- arbitrary name for the security scheme
+    bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: JWT    # optional, arbitrary value for documentation purposes
+      bearerFormat: JWT
+
 security:
-  - basicAuth: []  # <-- use the same name here
-  - bearerAuth: []  # <-- use the same name here
+
+- basicAuth: []
+
+- bearerAuth: []

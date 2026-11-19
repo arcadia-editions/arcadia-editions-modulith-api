@@ -1,0 +1,58 @@
+overlay: 1.1.0
+info:
+  title: Orders Checkout OpenAPI error responses
+  version: 1.0.0
+  description: >
+    Applied by ZDLToOpenAPIPlugin (openapiOverlayFiles) on top of the OpenAPI generated from
+    orders-checkout-domain-model.zdl: the 400 and 409 responses the ZDL cannot express (P-03 A, P-09).
+
+actions:
+  - target: "$.paths['/orders/start-checkout'].post.responses"
+    description: Invalid request, and stock unavailable with no Order persisted (P-03 A).
+    update:
+      "400":
+        description: "Invalid request"
+      "409":
+        description: "Stock unavailable; no Order persisted (P-03 A)"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockUnavailable"
+
+  - target: "$.paths['/orders/{id}'].get.responses"
+    description: Invalid request.
+    update:
+      "400":
+        description: "Invalid request"
+
+  - target: "$.components.schemas"
+    description: Body of the 409 of startOrderCheckout.
+    update:
+      StockUnavailable:
+        type: "object"
+        x-business-entity: "StockUnavailable"
+        required:
+          - "orderId"
+          - "unavailableItems"
+        properties:
+          orderId:
+            type: "string"
+          unavailableItems:
+            type: "array"
+            minItems: 1
+            items:
+              $ref: "#/components/schemas/StockUnavailableItem"
+      StockUnavailableItem:
+        type: "object"
+        x-business-entity: "StockUnavailableItem"
+        required:
+          - "sku"
+        properties:
+          sku:
+            type: "string"
+          requestedQuantity:
+            type: "integer"
+            format: "int32"
+          availableQuantity:
+            type: "integer"
+            format: "int32"

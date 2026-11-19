@@ -11,6 +11,7 @@ config {
         ZDLToOpenAPIPlugin {
             idType integer
             idTypeFormat int64
+            openapiOverlayFiles "./orders-checkout-openapi-overlay.yml"
             targetFile "./orders-checkout-openapi.yml"
         }
     }
@@ -33,7 +34,7 @@ entity Order(checkout_order) {
     @json items OrderItem[] required minlength(1) {
         sku String required
         quantity Integer required min(1)
-        unitPrice BigDecimal required // this should come from catalog.products
+        unitPrice BigDecimal required min(0) // client-sent (as designed for now); should come from catalog.products
     }
     @json shippingAddress ShippingAddress required {
         name String required
@@ -53,9 +54,9 @@ entity Order(checkout_order) {
 }
 
 enum OrderStatus {
-    CREATED
-    CONFIRMED
-    CANCELLED
+    CREATED(1)
+    CONFIRMED(2)
+    CANCELLED(3)
 }
 
 input StartOrderCheckoutInput {
@@ -66,7 +67,7 @@ input StartOrderCheckoutInput {
     items OrderItemInput[] required minlength(1) {
         sku String required
         quantity Integer required min(1)
-        unitPrice BigDecimal required // this should come from catalog.products
+        unitPrice BigDecimal required min(0) // client-sent (as designed for now); should come from catalog.products
     }
     shippingAddress ShippingAddressInput required {
         name String required
@@ -92,16 +93,22 @@ input CancelOrderInput {
 @rest("/orders")
 service OrdersCheckoutService for (Order) {
 
+    /** Persists the Order only on OrderCreated; StockUnavailable answers 409 and persists nothing (P-03 A). */
     @post("/start-checkout")
     @transition(to: CREATED)
     @calls(zdl: CatalogInventoryZdl, command: InventoryService.reserveStock)
     startOrderCheckout(StartOrderCheckoutInput) Order withEvents [OrderCreated | StockUnavailable]
 
+    /**
+     * No-op on CONFIRMED (redelivery). On CANCELLED, or when the stock is no longer
+     * held (NOT_HELD), the Order is not confirmed and OrderConfirmationRejected asks payments to void.
+     */
     @listener(zdl: PaymentsProcessingZdl, event: PaymentAuthorized)
     @transition(from: CREATED, to: CONFIRMED)
     @calls(zdl: CatalogInventoryZdl, command: InventoryService.confirmStockReservation)
-    confirmOrder(ConfirmOrderInput) Order withEvents OrderConfirmed
+    confirmOrder(ConfirmOrderInput) Order withEvents [OrderConfirmed | OrderConfirmationRejected]
 
+    /** No-op, no event, on CANCELLED (redelivered StockReleased). */
     @listener(zdl: CatalogInventoryZdl, event: StockReleased)
     @transition(from: [CREATED, CONFIRMED], to: CANCELLED)
     cancelOrder(CancelOrderInput) Order withEvents OrderCancelled
@@ -164,4 +171,14 @@ event OrderCancelled {
     /** Order.cancellationReason */
     reason String
     cancelledAt Instant
+}
+
+/** The authorization arrived for an order that is cancelled or whose stock is no longer held; payments voids it. */
+// @asyncapi({ channel: "order-confirmation-rejected-event-v1", topic: "orders-checkout.order-confirmation-rejected.event.avro.v1" })
+event OrderConfirmationRejected {
+    orderId String
+    customerId String
+    /** ORDER_CANCELLED or STOCK_NOT_HELD */
+    reason String
+    rejectedAt Instant
 }

@@ -18,6 +18,7 @@ config {
 
 apis {
     zdl client OrdersCheckoutZdl "./orders-checkout-domain-model.zdl"
+    zdl client PaymentsProcessingZdl "./payments-processing-domain-model.zdl"
 }
 
 @aggregate
@@ -46,12 +47,17 @@ entity Fulfillment {
     readyAt Instant
     failedAt Instant
     failureReason String
+    /** Set from PaymentCaptured; markReadyToShip requires it. */
+    paymentCapturedAt Instant
+    cancelledAt Instant
+    cancellationReason String
 }
 
 enum FulfillmentStatus {
-    SCHEDULED
-    READY_TO_SHIP
-    FAILED
+    SCHEDULED(1)
+    READY_TO_SHIP(2)
+    FAILED(3)
+    CANCELLED(4)
 }
 
 input ScheduleFulfillmentInput {
@@ -59,6 +65,18 @@ input ScheduleFulfillmentInput {
     customerId String required
     shippingAddress ShippingAddressInput required
     items FulfillmentItemInput[] required
+}
+
+input RecordPaymentCapturedInput {
+    orderId String required
+    /** PaymentCaptured.capturedAt */
+    capturedAt Instant required
+}
+
+input CancelFulfillmentInput {
+    orderId String required
+    /** OrderCancelled.reason */
+    reason String required
 }
 
 input ShippingAddressInput {
@@ -79,12 +97,26 @@ input FulfillmentItemInput {
 //@rest("/fulfillments")
 service FulfillmentShippingService for (Fulfillment) {
 
+    /** No-op, no event, when a Fulfillment exists for orderId (redelivery). */
     @listener(zdl: OrdersCheckoutZdl, event: OrderConfirmed)
-    @transition(to: SCHEDULED)
+    @transition(to: [SCHEDULED, FAILED])
     scheduleFulfillment(ScheduleFulfillmentInput) Fulfillment withEvents [FulfillmentScheduled | FulfillmentFailed]
 
+    /**
+     * Money moved: the warehouse may now prepare the parcel. Sets paymentCapturedAt; no state change,
+     * no event. No-op when there is no Fulfillment, it is not SCHEDULED, or paymentCapturedAt is set.
+     */
+    @listener(zdl: PaymentsProcessingZdl, event: PaymentCaptured)
+    recordPaymentCaptured(RecordPaymentCapturedInput) Fulfillment?
+
+    /** Warehouse action. Refused (no transition, no event) until paymentCapturedAt is set. */
     @transition(from: SCHEDULED, to: READY_TO_SHIP)
     markReadyToShip(id) Fulfillment withEvents FulfillmentReadyToShip
+
+    /** No-op, no event, when there is no Fulfillment for orderId or it is FAILED or CANCELLED. */
+    @listener(zdl: OrdersCheckoutZdl, event: OrderCancelled)
+    @transition(from: [SCHEDULED, READY_TO_SHIP], to: CANCELLED)
+    cancelFulfillment(CancelFulfillmentInput) Fulfillment? withEvents FulfillmentCancelled
 }
 
 // @asyncapi({ channel: "fulfillment-scheduled-event-v1", topic: "fulfillment-shipping.fulfillment-scheduled.event.avro.v1" })
@@ -112,4 +144,14 @@ event FulfillmentReadyToShip {
     carrierCode String
     trackingNumber String
     readyAt Instant
+}
+
+/** Published for the warehouse; no step of place-order-flow consumes it. */
+// @asyncapi({ channel: "fulfillment-cancelled-event-v1", topic: "fulfillment-shipping.fulfillment-cancelled.event.avro.v1" })
+event FulfillmentCancelled {
+    fulfillmentId String
+    orderId String
+    customerId String
+    reason String
+    cancelledAt Instant
 }

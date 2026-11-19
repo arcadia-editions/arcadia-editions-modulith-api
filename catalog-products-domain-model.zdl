@@ -31,14 +31,14 @@ entity Product {
 }
 
 enum ProductStatus {
-    DRAFT
-    PUBLISHED
-    RETIRED
+    DRAFT(1)
+    PUBLISHED(2)
+    RETIRED(3)
 }
 
 enum InventoryTrackingMode {
-    QUANTITY
-    SERIALIZED
+    QUANTITY(1)
+    SERIALIZED(2)
 }
 
 input CreateProductInput {
